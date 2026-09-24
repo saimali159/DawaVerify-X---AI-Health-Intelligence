@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Core Authentication & Ownership Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Role verification against trusted user document in Firestore
+    function userDocExists() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (userDocExists() && getUserData().role == 'admin') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isDoctor() {
+      return isSignedIn() && userDocExists() && getUserData().role == 'doctor';
+    }
+
+    function isResourceOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function isCreatingForSelf() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // --- User Accounts ---
+    // Users can only view and modify their own profile. Admin can inspect/manage.
+    // Non-admins are prevented from escalating privileges to 'admin'.
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isDoctor() || isAdmin();
+      allow create: if isOwner(userId) && (
+        !request.resource.data.keys().hasAny(['role']) ||
+        request.resource.data.role in ['patient', 'doctor']
+      );
+      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Clinical Patient Profiles ---
+    // Patients read/manage only their own profile. Doctors and Admins can view/update patient records.
+    match /patients/{patientId} {
+      allow read: if isResourceOwner() || isDoctor() || isAdmin();
+      allow create: if isCreatingForSelf() || isDoctor() || isAdmin();
+      allow update: if (isResourceOwner() && request.resource.data.userId == resource.data.userId) || isDoctor() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Prescriptions ---
+    // Scoped strictly to the patient owner or treating clinical doctors/admins.
+    match /prescriptions/{prescriptionId} {
+      allow read: if isResourceOwner() || isDoctor() || isAdmin();
+      allow create: if isCreatingForSelf() || isDoctor() || isAdmin();
+      allow update: if (isResourceOwner() && request.resource.data.userId == resource.data.userId) || isDoctor() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Medication Schedules ---
+    // Daily adherence is private to the individual patient or accessible by Admins.
+    match /schedules/{scheduleId} {
+      allow read: if isResourceOwner() || isAdmin();
+      allow create: if isCreatingForSelf() || isAdmin();
+      allow update: if isResourceOwner() && request.resource.data.userId == resource.data.userId;
+      allow delete: if isResourceOwner() || isAdmin();
+    }
+
+    // --- Lab Reports ---
+    // Sensitive biomarkers are viewable only by the patient owner, doctors, or admins.
+    match /labReports/{labReportId} {
+      allow read: if isResourceOwner() || isDoctor() || isAdmin();
+      allow create: if isCreatingForSelf() || isDoctor() || isAdmin();
+      allow update: if (isResourceOwner() && request.resource.data.userId == resource.data.userId) || isDoctor() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Clinical Risk Alerts ---
+    // Flagged drug interactions and allergies are scoped to the patient, clinical doctors, or admins.
+    match /riskAlerts/{riskAlertId} {
+      allow read: if isResourceOwner() || isDoctor() || isAdmin();
+      allow create: if isCreatingForSelf() || isDoctor() || isAdmin();
+      allow update: if (isResourceOwner() && request.resource.data.userId == resource.data.userId) || isDoctor() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Family Vault Profiles ---
+    // Strict ownership boundary: Family vault access only through ownership (userId) or system admin.
+    match /familyMembers/{memberId} {
+      allow read: if isResourceOwner() || isAdmin();
+      allow create: if isCreatingForSelf() || isAdmin();
+      allow update: if isResourceOwner() && request.resource.data.userId == resource.data.userId;
+      allow delete: if isResourceOwner() || isAdmin();
+    }
+
+    // --- System / Connectivity Check ---
+    match /system/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

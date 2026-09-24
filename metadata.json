@@ -1,0 +1,6 @@
+{
+  "name": "DawaVerify X - AI Health Intelligence",
+  "description": "Production-grade AI personal health intelligence platform featuring Gemini-powered prescription analysis, clinical memory engine, medical risk radar, family health vault, and QR emergency passport.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

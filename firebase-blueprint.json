@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["patient", "doctor", "admin"] },
+        "avatar": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "PatientProfile": {
+      "title": "PatientProfile",
+      "description": "Longitudinal patient clinical profile including allergies, conditions, and emergency contacts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "gender": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "heightCm": { "type": "number" },
+        "weightKg": { "type": "number" },
+        "allergies": { "type": "array" },
+        "chronicDiseases": { "type": "array" },
+        "emergencyContacts": { "type": "array" },
+        "organDonor": { "type": "boolean" },
+        "insuranceProvider": { "type": "string" },
+        "policyNumber": { "type": "string" }
+      },
+      "required": ["id", "userId", "fullName"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "Verified medical prescriptions and prescribed drugs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "userId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "issueDate": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "medicines": { "type": "array" },
+        "interactions": { "type": "array" },
+        "overallConfidence": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "patientId", "userId", "doctorName", "issueDate"]
+    },
+    "MedicationScheduleItem": {
+      "title": "MedicationScheduleItem",
+      "description": "Daily medication adherence tracking item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "medicineName": { "type": "string" },
+        "dosage": { "type": "string" },
+        "slot": { "type": "string" },
+        "scheduledTime": { "type": "string" },
+        "taken": { "type": "boolean" },
+        "takenAt": { "type": "string" },
+        "instructions": { "type": "string" }
+      },
+      "required": ["id", "userId", "medicineName", "dosage", "slot", "scheduledTime", "taken"]
+    },
+    "LabReport": {
+      "title": "LabReport",
+      "description": "Diagnostic and laboratory test findings with reference markers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "userId": { "type": "string" },
+        "reportType": { "type": "string" },
+        "collectionDate": { "type": "string" },
+        "labName": { "type": "string" },
+        "summary": { "type": "string" },
+        "markers": { "type": "array" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "patientId", "userId", "reportType", "collectionDate", "labName"]
+    },
+    "MedicalRiskAlert": {
+      "title": "MedicalRiskAlert",
+      "description": "Drug interaction, allergy collision, or overuse safety risk alert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "severity": { "type": "string" },
+        "identifiedAt": { "type": "string" },
+        "involvedMedicines": { "type": "array" },
+        "suggestedAction": { "type": "string" },
+        "isResolved": { "type": "boolean" }
+      },
+      "required": ["id", "userId", "type", "title", "severity", "identifiedAt"]
+    },
+    "FamilyMember": {
+      "title": "FamilyMember",
+      "description": "Family vault member profile",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "relationship": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "bloodGroup": { "type": "string" }
+      },
+      "required": ["id", "userId", "name", "relationship"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile with role authentication"
+    },
+    "/patients/{patientId}": {
+      "schema": "PatientProfile",
+      "description": "Patient clinical master record"
+    },
+    "/prescriptions/{prescriptionId}": {
+      "schema": "Prescription",
+      "description": "Verified prescription records"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "MedicationScheduleItem",
+      "description": "Medication adherence log items"
+    },
+    "/labReports/{labReportId}": {
+      "schema": "LabReport",
+      "description": "Laboratory biomarker records"
+    },
+    "/riskAlerts/{riskAlertId}": {
+      "schema": "MedicalRiskAlert",
+      "description": "Clinical risk radar alerts"
+    },
+    "/familyMembers/{memberId}": {
+      "schema": "FamilyMember",
+      "description": "Family vault profile entries"
+    }
+  }
+}
