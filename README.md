@@ -79,4 +79,4 @@ npm run dev
 
 **Saim Qureshi**
 CS Student, University of Sufism and Modern Sciences, Bhit Shah
-🔗 [GitHub](https://github.com/saimali159) · [LinkedIn](your-linkedin-url)
+🔗 [GitHub](https://github.com/saimali159) · [LinkedIn](https://www.linkedin.com/in/saim-qureshi-9ba3093b5/)
