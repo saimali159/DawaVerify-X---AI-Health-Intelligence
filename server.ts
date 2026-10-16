@@ -69,7 +69,7 @@ async function startServer() {
     res.json({
       status: 'online',
       service: 'DawaVerify X Backend Engine',
-      framework: 'FastAPI / Node Microkernel Hybrid',
+      framework: 'Express.js (Node.js)',
       geminiConfigured: !!process.env.GEMINI_API_KEY,
       timestamp: new Date().toISOString(),
     });
@@ -927,24 +927,39 @@ Always include practical tips and standard safety guidance. Keep formatting clea
     }
   });
 
-  // 5. System Architecture & OpenAPI Blueprint Data (Evaluator / Final Year Project Showcase)
+  // 5. System Architecture & Blueprint Data (Verified Codebase Architecture)
   app.get('/api/system/blueprint', (req, res) => {
     res.json({
       project: 'DAWAVERIFY X - AI Personal Health Intelligence Platform',
       version: '3.8.0-Production-Release',
-      architectureType: 'Microservices & Async Clinical Intelligence Architecture',
+      architectureType: 'Full-Stack Node.js/TypeScript Monolith & Cloud Firestore Serverless Architecture',
       backendStack: {
-        framework: 'FastAPI (Python 3.11) with Uvicorn ASGI Worker Clusters',
-        database: 'PostgreSQL 16 with TimescaleDB Extension (Biomarker Timeseries)',
-        cache: 'Redis 7.2 (JWT Session Revocation, Rate Limiting & Drug DB Caching)',
-        ocrEngine: 'Tesseract OCR v5.3 + Google Cloud Vision Fallback',
-        aiCore: 'Gemini 3.8 Flash Multimodal Clinical Pharmacovigilance Model',
-        messageQueue: 'Celery + RabbitMQ (Async PDF OCR Parsing & Drug Interaction Matrix)',
+        framework: 'Express.js (Node.js)',
+        runtime: 'Node.js 22 LTS with TypeScript (tsx)',
+        authentication: 'Cryptographic JSON Web Tokens (jsonwebtoken) with server-side role resolution',
+        imagePreprocessing: 'Sharp for resolution validation, contrast stretch, grayscale conversion & unsharp masking',
+      },
+      databaseStack: {
+        database: 'Google Cloud Firestore',
+        sdk: 'Firebase JavaScript SDK v12.19 (Firestore & Firebase Auth)',
+        dataModel: 'NoSQL Document Store (collections: users, patients, prescriptions, drug_interactions, lab_reports)',
+        persistence: 'IndexedDB Offline Cache & Real-Time Sync',
+        security: 'Granular Firestore Security Rules (firestore.rules) enforcing RBAC',
+      },
+      aiAndOcrStack: {
+        engine: 'Google Gemini API (@google/genai)',
+        pipeline: 'Two-Stage Clinical Pipeline',
+        stage1Ocr: 'Gemini Vision for visual text transcription & line-by-line confidence scoring (OCR only, no diagnostic hallucination)',
+        stage2Reasoning: 'Gemini for pharmacology reasoning, drug interaction matrix, allergy cross-matching, and antibiotic stewardship',
+        imagePreprocessor: 'Sharp for statistical variance & image quality score gating (0-100 score)',
       },
       frontendStack: {
         framework: 'React 19 + TypeScript + Vite 6',
         styling: 'Tailwind CSS v4 + Motion UI',
         icons: 'Lucide-React Clinical Suite',
+        qrEngine: 'qrcode (generation) + jsqr (scanner & canvas decoding)',
+        pdfExport: 'jspdf (Clinical Summary PDF generator)',
+        charts: 'Recharts',
       },
     });
   });
