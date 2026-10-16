@@ -96,7 +96,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
                 DAWAVERIFY <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400 font-extrabold">X</span>
               </span>
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-300 border border-teal-500/20">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide bg-gradient-to-r from-teal-500/15 via-emerald-500/10 to-cyan-500/15 text-teal-300 border border-teal-500/30 shadow-sm shadow-teal-500/10">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse"></span>
                 AI HEALTH INTELLIGENCE
               </span>
             </div>
@@ -113,15 +114,19 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="relative">
               <button
                 onClick={() => setMemberDropdownOpen(!memberDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-teal-500/40 text-slate-200 text-xs font-medium transition-all shadow-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/70 hover:border-teal-500/50 text-slate-200 text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-teal-500/10 active:scale-[0.98] group"
                 title="Switch Active Family Health Vault Record"
               >
-                <Users className="w-3.5 h-3.5 text-teal-400" />
-                <span className="max-w-[100px] truncate">{activeFamilyMember?.name || 'Primary'}</span>
-                <span className="text-[10px] text-teal-400/80 uppercase font-mono px-1 rounded bg-teal-950/60 border border-teal-800/40">
+                <div className="w-5 h-5 rounded-md bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 group-hover:bg-teal-500/20 transition-colors">
+                  <Users className="w-3 h-3 text-teal-400" />
+                </div>
+                <span className="max-w-[105px] truncate font-medium text-slate-200 group-hover:text-white transition-colors">
+                  {activeFamilyMember?.name || 'Primary'}
+                </span>
+                <span className="text-[9px] font-semibold tracking-wider text-teal-300 uppercase px-1.5 py-0.5 rounded-md bg-teal-950/80 border border-teal-700/50 shadow-inner">
                   {activeFamilyMember?.relationship || 'Self'}
                 </span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-400 transition-colors ml-0.5" />
               </button>
 
               {memberDropdownOpen && (
@@ -172,11 +177,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Quick Emergency QR Passport CTA */}
           <button
             onClick={handleOpenPassport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all shadow-sm group"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:border-emerald-400/60 text-xs font-semibold transition-all duration-200 shadow-sm hover:shadow-emerald-500/15 active:scale-[0.98] group"
             title="Open Emergency QR Health Passport"
           >
-            <QrCode className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-            <span className="hidden sm:inline">QR Passport</span>
+            <QrCode className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 group-hover:rotate-3 transition-transform" />
+            <span className="hidden sm:inline-flex items-center gap-1.5 font-semibold text-emerald-300 group-hover:text-emerald-200 tracking-wide">
+              QR Passport
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            </span>
           </button>
 
           {/* Theme Mode Toggle */}

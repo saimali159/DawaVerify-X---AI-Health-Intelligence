@@ -20,6 +20,7 @@ import {
   setDoc,
   getDoc,
 } from '../../lib/firebase';
+import { loginUser } from '../../lib/api';
 
 interface AuthModalProps {
   currentUser: UserAccount;
@@ -117,20 +118,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorFeedback(null);
-    setFeedback('Validating session credentials with Firebase...');
+    setFeedback('Authenticating session via cryptographic JWT Gateway...');
 
     try {
+      // Call backend to authenticate and retrieve real cryptographically signed JWT
+      const loginRes = await loginUser(email, role);
+      const serverUser = loginRes?.user;
+      const assignedRole = serverUser?.role || role;
+
       const updatedUser: UserAccount = {
-        id: currentUser.id || `usr_${Date.now()}`,
-        name: name || currentUser.name,
-        email: email || currentUser.email,
-        role: role,
+        id: serverUser?.id || currentUser.id || `usr_${Date.now()}`,
+        name: serverUser?.name || name || currentUser.name,
+        email: serverUser?.email || email || currentUser.email,
+        role: assignedRole,
         avatar:
+          serverUser?.avatar ||
           currentUser.avatar ||
           'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        jwtToken: `eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.${btoa(
-          JSON.stringify({ sub: email, role, exp: Date.now() + 86400000 })
-        )}.firebase_session`,
+        jwtToken: loginRes?.token || currentUser.jwtToken,
         createdAt: currentUser.createdAt || new Date().toISOString(),
       };
 

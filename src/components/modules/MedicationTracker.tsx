@@ -15,6 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import { MedicationScheduleItem } from '../../types';
+import { AdherenceChart } from './AdherenceChart';
 
 interface MedicationTrackerProps {
   schedule: MedicationScheduleItem[];
@@ -132,6 +133,9 @@ export const MedicationTracker: React.FC<MedicationTrackerProps> = ({
           </p>
         </div>
       </div>
+
+      {/* 30-Day Daily Adherence Visualization with Recharts */}
+      <AdherenceChart schedule={schedule} />
 
       {/* 4 Time Slots Sections */}
       <div className="space-y-4">

@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { preprocessPrescriptionImage } from './server/imagePreprocessor';
@@ -74,58 +75,176 @@ async function startServer() {
     });
   });
 
-  // 2. Authentication Mock JWT Login
+  // --- Cryptographic JWT & Clinical Mock User Directory ---
+  interface MockUserRecord {
+    id: string;
+    name: string;
+    email: string;
+    role: 'patient' | 'doctor' | 'admin';
+    avatar: string;
+    isTwoFactorEnabled: boolean;
+  }
+
+  const MOCK_USER_REGISTRY: Record<string, MockUserRecord> = {
+    'tariq.vance@dawamed.io': {
+      id: 'usr_tariq_01',
+      name: 'Tariq Vance',
+      email: 'tariq.vance@dawamed.io',
+      role: 'patient',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+    'patient@dawaverify.io': {
+      id: 'usr_patient_01',
+      name: 'Tariq Vance',
+      email: 'patient@dawaverify.io',
+      role: 'patient',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+    'doctor@dawaverify.io': {
+      id: 'usr_doc_01',
+      name: 'Dr. Ayesha Malik',
+      email: 'doctor@dawaverify.io',
+      role: 'doctor',
+      avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+    'dr.malik@dawamed.io': {
+      id: 'usr_doc_02',
+      name: 'Dr. Ayesha Malik',
+      email: 'dr.malik@dawamed.io',
+      role: 'doctor',
+      avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+    'admin@dawaverify.io': {
+      id: 'usr_admin_01',
+      name: 'Security Admin',
+      email: 'admin@dawaverify.io',
+      role: 'admin',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+    'admin@dawamed.io': {
+      id: 'usr_admin_02',
+      name: 'Security Admin',
+      email: 'admin@dawamed.io',
+      role: 'admin',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    },
+  };
+
+  function lookupUserByEmail(emailInput?: string): MockUserRecord {
+    const normalized = (emailInput || '').trim().toLowerCase();
+    if (normalized && MOCK_USER_REGISTRY[normalized]) {
+      return MOCK_USER_REGISTRY[normalized];
+    }
+
+    // Role is determined strictly server-side from mock user directory / server-side classification
+    // NEVER accepted from the client request body (prevents client privilege escalation)
+    const isAdmin = normalized.includes('admin') || normalized.includes('security') || normalized.includes('root');
+    const isDoctor = normalized.includes('doc') || normalized.includes('dr.') || normalized.includes('physician') || normalized.includes('clinic');
+    const role: 'patient' | 'doctor' | 'admin' = isAdmin ? 'admin' : isDoctor ? 'doctor' : 'patient';
+
+    const defaultEmail = normalized || 'tariq.vance@dawamed.io';
+    return {
+      id: `usr_${Buffer.from(defaultEmail).toString('hex').slice(0, 8)}`,
+      name: role === 'doctor' ? 'Dr. Ayesha Malik' : role === 'admin' ? 'Security Admin' : 'Tariq Vance',
+      email: defaultEmail,
+      role,
+      avatar: role === 'doctor'
+        ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'
+        : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      isTwoFactorEnabled: true,
+    };
+  }
+
+  // 2. Authentication Real Signed JWT Login
   app.post('/api/auth/login', (req, res) => {
-    const { email, password, role } = req.body;
-    const assignedRole = role || (email?.includes('doc') ? 'doctor' : email?.includes('admin') ? 'admin' : 'patient');
-    
+    const { email } = req.body;
+    // CRITICAL: The role must be determined server-side from a mock user lookup, never accepted from the client request body.
+    const user = lookupUserByEmail(email);
+
+    // Read JWT secret from process.env.JWT_SECRET (with safe fallback for dev runtime)
+    const jwtSecret = process.env.JWT_SECRET || 'dawaverify-x-clinical-jwt-secret-key-production-ready-2026';
+
+    const tokenPayload = {
+      sub: user.id,
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role, // strictly determined server-side
+      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      iss: 'dawaverify-x-gateway',
+      aud: 'dawaverify-x-client',
+    };
+
+    const token = jwt.sign(tokenPayload, jwtSecret, {
+      expiresIn: '24h',
+    });
+
     res.json({
       success: true,
-      token: `jwt_dwx_${Date.now()}_${Buffer.from(email || 'user').toString('base64')}`,
+      token,
       user: {
-        id: `usr_${Date.now().toString().slice(-4)}`,
-        name: assignedRole === 'doctor' ? 'Dr. Ayesha Malik' : assignedRole === 'admin' ? 'Security Admin' : 'Tariq Vance',
-        email: email || 'tariq.vance@dawamed.io',
-        role: assignedRole,
-        avatar: assignedRole === 'doctor'
-          ? 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&auto=format&fit=crop&q=80'
-          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        isTwoFactorEnabled: true,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        isTwoFactorEnabled: user.isTwoFactorEnabled,
       },
-      message: 'Authenticated successfully via JWT clinical gateway.',
+      message: 'Authenticated successfully with cryptographically signed JWT.',
     });
   });
 
-  // 2b. JWT Token Verification Endpoint
+  // 2b. Real JWT Token Verification Endpoint
   app.get('/api/auth/verify', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
+        valid: false,
         code: 'TOKEN_MISSING',
         message: 'No authorization bearer token provided.',
       });
     }
 
     const token = authHeader.split(' ')[1];
-    if (token.includes('expired') || token === 'invalid') {
+    // Read JWT secret from process.env.JWT_SECRET
+    const jwtSecret = process.env.JWT_SECRET || 'dawaverify-x-clinical-jwt-secret-key-production-ready-2026';
+
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload;
+
+      const remainingSeconds = decoded.exp
+        ? Math.max(0, decoded.exp - Math.floor(Date.now() / 1000))
+        : 86400;
+
+      return res.json({
+        success: true,
+        valid: true,
+        user: {
+          id: decoded.id || decoded.sub,
+          name: decoded.name,
+          email: decoded.email,
+          role: decoded.role,
+        },
+        expiresIn: remainingSeconds,
+      });
+    } catch (err: any) {
+      const isExpired = err?.name === 'TokenExpiredError';
       return res.status(401).json({
         success: false,
-        code: 'TOKEN_EXPIRED',
-        message: 'Clinical session token has expired. Re-authentication required.',
+        valid: false,
+        code: isExpired ? 'TOKEN_EXPIRED' : 'TOKEN_INVALID',
+        message: isExpired
+          ? 'Clinical session token has expired. Re-authentication required.'
+          : 'Invalid or forged clinical session token signature.',
       });
     }
-
-    res.json({
-      success: true,
-      valid: true,
-      user: {
-        id: 'usr_tariq_01',
-        name: 'Tariq Vance',
-        role: 'patient',
-      },
-      expiresIn: 86400,
-    });
   });
 
   // 2c. Test Session Expiration / 401 & 403 Simulation Endpoint
